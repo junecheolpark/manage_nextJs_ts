@@ -1,194 +1,199 @@
-import Image from "next/image";
+import { useState, useEffect } from "react";
+import style from './css/main.module.css'
 
 export default function Home() {
+  interface Board {
+  mbidx: number;
+  title: string;
+}
+
+const [boardList, setBoardList] = useState<Board[]>([]);
+const [activeMbidx, setActiveMbidx] = useState<number>(0);
+
   return (
-    <section className="contens">
-            {/* 검색 영역 */}
-            <section className="schBox">
-                <p>
-                    총 <span id="totalCnt" className="colBlue">0</span>건
-                </p>
-                <select id="ddlDateSearch" style={{ width: "120px" }}>
-                    <option value="">작성일</option>
-                </select>
-
-                <DatePicker
-                    selected={search.schd1}
-                    onChange={(date) =>
-                        setSearch(prev => ({
-                            ...prev,
-                            schd1: date
-                        }))
-                    }
-                    dateFormat="yyyy-MM-dd"
-                    locale={ko}
-                    placeholderText="시작일"
-                    className="cal"
-                    style={{ width: "120px" }}
-                />
-                ~
-                <DatePicker
-                    selected={search.schd2}
-                    onChange={(date) =>
-                        setSearch(prev => ({
-                            ...prev,
-                            schd2: date
-                        }))
-                    }
-                    dateFormat="yyyy-MM-dd"
-                    locale={ko}
-                    placeholderText="종료일"
-                    className="cal"
-                    style={{ width: "120px" }}
-                />
-
-                <input type="text" name="schrnm" placeholder="작성자" style={{ width: "120px" }} onChange={searchChange} />
-                <input type="text" name="schtxt" placeholder="제목" style={{ width: "250px" }} onChange={searchChange} onKeyUp={enterKey} />
-                <input type="submit" id="btnSch" value="검색" className="btn btnBlue" />
-            </section>
-            <section className={style.board_01}>
-                {/* 게시판 목록 */}
-                <section className="shadowBox">
-                    <table className="tableList">
-                        <colgroup>
-                            <col />
-                            <col style={{ width: "10%" }} />
-                            <col style={{ width: "10%" }} />
-                            <col style={{ width: "10%" }} />
-                            <col style={{ width: "17%" }} />
-                        </colgroup>
-                        <thead>
-                            <tr>
-                                <th>제목</th>
-                                <th>첨부파일</th>
-                                <th>작성자</th>
-                                <th>조회수</th>
-                                <th>작성일</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {boardList.length === 0 ? (
-                                <tr>
-                                    <td colSpan="5" className="noData">
-                                        검색된 게시글이 없습니다.
-                                    </td>
-                                </tr>
-                            ) : (
-                                boardList.map((item) => (
-                                    <tr
-                                        key={item.board_IDX}
-                                        onClick={() => fnBoardView(item.board_IDX)} // 클릭 시 상세 보기
-                                        className={` ${selBoard === item.board_IDX ? "selRow" : ""}`}
-                                        onClick={() => fnBoardView(item.board_IDX)}
-                                    >
-                                        <td className="tdL">
-                                            <p className="text-ellipsis" title={item.subj}>
-                                                <span>{item.subj}</span>
-                                            </p>
-                                        </td>
-                                        <td>
-                                            <span className="lblFile">
-                                                {item.file_IDX === 0 ? (
-                                                    "-"
-                                                ) : (
-                                                    <img
-                                                        src="/images/icon/ic_file.png"
-                                                        alt="첨부파일 있음"
-                                                        height="16"
-                                                    />
-                                                )}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <span className="lblRegName">{item.reg_NM}</span>
-                                        </td>
-                                        <td>
-                                            <span className="lblCnt">{item.read_CNT}</span>
-                                        </td>
-                                        <td>
-                                            <span className="lblRegDate">{item.reg_DATE.substr(0, 10)}</span>
-                                        </td>
-                                    </tr>
-                                )))}
-                        </tbody>
-                    </table>
-                    <section id="pagingView" className="paging" />
-                </section>
-
-                {/* 작성 영역 */}
-                <section className="shadowBox">
-                    <table className="tableView">
-                        <colgroup>
-                            <col style={{ width: "12%" }} />
-                            <col style={{ width: "40%" }} />
-                            <col style={{ width: "10%" }} />
-                            <col style={{ width: "38%" }} />
-                        </colgroup>
-                        <tbody>
-                            <tr>
-                                <th>작성자</th>
-                                <td><span id="regName">{adminUser._c_logNm}</span></td>
-                                <th>작성날짜</th>
-                                <td><span id="regDate">{boardView.reg_DATE.substr(0, 16) || '자동 저장'}</span></td>
-                            </tr>
-                            <tr>
-                                <td colSpan="4" style={{ padding: "10px 0" }}>
-                                    <input type="text" name="subj" value={boardView.subj || ""} maxLength="100" placeholder="제목을 입력해 주세요" onChange={boardViewChange} />
-                                </td>
-                            </tr>
-                            <tr>
-                                <td colSpan="4" style={{ padding: "10px 0", height: "304px" }}>
-                                    <CKEditor
-                                        editor={ClassicEditor}
-                                        data={boardView.conts || ""}
-                                        config={{
-                                            placeholder: "내용을 입력해 주세요",
-                                            ckfinder: { uploadUrl: "/common/uploadImgOne" }
-                                        }}
-                                        onChange={(event, editor) => {
-                                            const data = editor.getData();
-                                            boardViewChange({
-                                                target: { name: "conts", value: data }
-                                            });
-                                        }} />
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-
-                    {/* 파일 업로드 */}
-                    <div className="fileUploadBody">
-                        <FileDropDown
-                            serverFiles={serverFiles}               // 기존 파일
-                            newFiles={newFiles}                     // 새로 추가된 파일
-                            onChangeFiles={setNewFiles}             // FileDropDown에서 파일이 변경되면 호출됨
-                            onRemoveServerFile={fnRemoveServerFile} // 기존파일 삭제
-                            onRemoveNewFile={fnRemoveNewFile}       // 새파일 삭제
-                        />
-
-                        <div id="fileFoot">
-                            <div className="filebox mgTB10">
-                                <label htmlFor="j_file">파일추가</label>
-                                <input type="file" id="j_file" multiple onChange={fnAddFiles}/>
-                                <a href="#download" id="fileDownBtn" className="btn btnWhite" style={{ display: "none" }}>
-                                    파일전체 다운로드
-                                </a>
-                                <a href="#input" id="fileUpBtn" className="btn btnBlueLine floatR" style={{ display: "none" }}>
-                                    파일 업로드
-                                </a>
-                            </div>
+    <section className={style.board}>
+            <section className={style.mainBoard}>
+                {/* 근태관리 */}
+                <div className={style.tA}>
+                    <div className={style.mTitle}>
+                        <span className="ftSize20 ftBold">근태관리</span>&nbsp;&nbsp;&nbsp;
+                        <a href="/mypage/01" className={style.moreBtn}>more +</a>
+                    </div>
+                    <div className={style.contBox}>
+                        <p id="today" className="mgB20 ftSize18 ftMedium">
+                            <span className="ftSize20 ftMedium"></span>
+                            <span className="ftSize20 ftMedium"></span>
+                            <span className="ftSize20 ftMedium"></span>
+                            <span className="ftSize20 ftMedium"></span>
+                        </p>
+                        <p className="mgTB10">출근시간 <span id="goWork" className="floatR colGray2">-</span></p>
+                        <p>퇴근시간 <span id="backWork" className="floatR colGray2">-</span></p>
+                        <p className="mgTB10">남은연차 <span id="yearLeave" className="floatR colGray2">0</span></p>
+                        <div className={style.txtC}>
+                            <p className={style.fick}>
+                                <a href="#reg" className="btn btn100 btnBlue">출/퇴근 등록</a>
+                            </p>
                         </div>
                     </div>
-
-                    {/* 하단 버튼 */}
-                    <div className={style.boardFootBtn}>
-                        <a href="#" className="btn btnBlue" id="btnInput" onClick={() => fnBoardInput(0)}>{selBoard === 0 ? "등록" : "수정"}</a>
-                        <a href="#" className="btn btnRed" id="btnDelete" style={{ display: selBoard === 0 ? "none" : "inline-block" }} onClick={fnBoardDelete}>삭제</a>
-                        <a href="#" className="btn btnWhite" id="btnCancel" onClick={fnBoardCancel}>취소</a>
+                </div>
+                {/* 주간일정 */}
+                <div className={style.weekly}>
+                    <div className={style.mTitle}>
+                        <span className="ftSize20 ftBold">주간일정</span>&nbsp;&nbsp;
+                        <a href="/schedule/01" className={style.moreBtn}>more +</a>
                     </div>
-                </section>
-            </section>
+                    <div id="contentswrap1" className={`contentswrap shadowBox ${style.contBox}`}>
+                        <div className={style.indexSchedule} >
+                            <table>
+                                <colgroup>
+                                    <col width="10%" />
+                                    <col width="10%" />
+                                    <col width="10%" />
+                                    <col width="10%" />
+                                    <col width="10%" />
+                                    <col width="10%" />
+                                    <col width="10%" />
+                                </colgroup>
+                                <thead>
+                                    <tr>
+                                        <th className="colRed sunday">일요일</th>
+                                        <th className="monday">월요일</th>
+                                        <th className="tuesday">화요일</th>
+                                        <th className="wednesday">수요일</th>
+                                        <th className="thursday">목요일</th>
+                                        <th className="friday">금요일</th>
+                                        <th className="colBlue2 saturday">토요일</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td id="sunday"></td>
+                                        <td id="monday"></td>
+                                        <td id="tuesday"></td>
+                                        <td id="wednesday"></td>
+                                        <td id="thursday"></td>
+                                        <td id="friday"></td>
+                                        <td id="saturday"></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
 
+                {/* 게시판 */}
+                <div className={style.bulletin}>
+                    <div className={style.mTitle}>
+                        <span className="ftSize20 ftBold">게시판</span>
+                        <a href="/clipboard/01" className={style.moreBtn}>more +</a>
+                    </div>
+                    <div className={style.contBox}>
+                        <div className={style.noticeTop}>
+                            <a href="#">
+                                &nbsp;&nbsp;<img src="/images/icon/notice_icon.png" alt="Notice" />
+                                <span className="ftBold ftSize16" id="noticeTxt">-</span>
+                            </a>
+                        </div>
+                        <div className={style.tabMenuList}>
+                            <ul>
+                                <li
+                                    data-mbidx="0"
+                                    className={activeMbidx === 0 ? style.choicebulletin : ""}
+                                >
+                                    <a href="#all">전체</a>
+                                </li>
+
+                                <li
+                                    data-mbidx="10"
+                                    className={activeMbidx === 10 ? style.choicebulletin : ""}
+                                >
+                                    <a href="#">공지사항</a>
+                                </li>
+
+                                <li
+                                    data-mbidx="11"
+                                    className={activeMbidx === 11 ? style.choicebulletin : ""}
+                                >
+                                    <a href="#">자료실</a>
+                                </li>
+
+                                <li
+                                    data-mbidx="12"
+                                    className={activeMbidx === 12 ? style.choicebulletin : ""}
+                                >
+                                    <a href="#">업무공유</a>
+                                </li>
+                            </ul>
+                        </div>
+                        <div className={style.tabMenuCont}>
+                            <ul>
+                                <li>
+                                    <a href="#">전체</a>
+                                    <ul id="boardList">
+                                        {boardList.length > 0 ? (
+                                            boardList.map((val, i) => (
+                                                <li key={val.board_IDX} >
+                                                    <a>
+                                                        {val.dateCnt < 7 && <img src="/resources/images/icon/newIcon.png" alt="new" />}
+                                                        {val.subj}
+                                                    </a>
+                                                    <p>
+                                                        <span className="colGray2">{val.reg_NM}</span>&nbsp;
+                                                        <span className="colGray2">{val.reg_DATE.substring(0, 10)}</span>
+                                                    </p>
+                                                </li>
+                                            ))
+                                        ) : (
+                                            <li style={{ textAlign: "center" }}>
+                                                <span className="noData">검색된 게시글이 없습니다.</span>
+                                            </li>
+                                        )}
+                                    </ul>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            {/* myPlace */}
+            <section className={style.myPlace}>
+                <p className="ftSize20 ftBold mP">
+                    My Place&nbsp;&nbsp;
+                    <a href="#memo" onClick={handleAdd}>
+                        <img src="/images/icon/ic_memo.png" alt="추가" />추가
+                    </a>
+                </p>
+                <div className="mDiv" id="memoBox">
+                    {memos.map((memo) => (
+                        <div key={memo.id} className={style.memo}>
+                            <div className={style.placeTitle}>
+                                <div className="floatR" data-uidx="0" data-rdate="">
+                                    <button
+                                        className="btn btnS btnWhite memoSave"
+                                        onClick={() => fnMemoSave(memo.id)}
+                                    >
+                                        저장
+                                    </button>
+                                    &nbsp;
+                                    <button
+                                        className="btn btnS btnBlueLine memoDel"
+                                        onClick={() => fnMemoDelete(memo.id)}
+                                    >
+                                        삭제
+                                    </button>
+                                </div>
+                                <textarea
+                                    rows="5"
+                                    cols="5"
+                                    className="txtMemo"
+                                    value={memo.text}
+                                    onChange={(e) => fnMemoChange(memo.id, e.target.value)}
+                                />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </section>
         </section>
-  );
+    )
 }
